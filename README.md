@@ -9,6 +9,7 @@ Intégration HACS qui récupère sur [carbu.com](https://carbu.com/belgique/) le
 | Capteur | État | Attributs utiles |
 |---|---|---|
 | `sensor.carbu_<commune>_<carburant>_moins_cher` | prix le plus bas (€/L) | station, marque, adresse, url, date de mise à jour, `stations` (top 10) |
+| `sensor.carbu_<commune>_<carburant>_station` | « Station – adresse (distance) » de la moins chère | latitude, longitude, maps_url, prix |
 | `sensor.carbu_<commune>_<carburant>_moyenne` | prix moyen (€/L) | min, max, nombre de stations, économie sur 50 L |
 
 Carburants : Super 95 (E10), Super 98 (E5), Diesel (B7), LPG.
@@ -57,6 +58,10 @@ content: >
   ({{ state_attr(s,'distance_km') }} km)<br>
   [{{ state_attr(s,'full_address') }}]({{ state_attr(s,'maps_url') }})
 ```
+
+## Plusieurs communes
+
+Paramètres → Appareils et services → Carbu BE → **Ajouter une entrée**, puis un autre code postal. Chaque commune devient un appareil séparé avec ses propres capteurs.
 
 ## Exemple d'automatisation
 

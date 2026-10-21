@@ -33,6 +33,7 @@ async def async_setup_entry(
     for fuel in coordinator.fuels:
         entities.append(CarbuCheapestSensor(coordinator, fuel))
         entities.append(CarbuAverageSensor(coordinator, fuel))
+        entities.append(CarbuStationSensor(coordinator, fuel))
     async_add_entities(entities)
 
 
@@ -106,6 +107,53 @@ class CarbuCheapestSensor(_CarbuBase):
         if best.latitude is not None and best.longitude is not None:
             attrs["latitude"] = best.latitude
             attrs["longitude"] = best.longitude
+        return {k: v for k, v in attrs.items() if v is not None}
+
+
+class CarbuStationSensor(_CarbuBase):
+    """Name and address of the cheapest station (text sensor, shown on maps)."""
+
+    _attr_native_unit_of_measurement = None
+    _attr_state_class = None
+    _attr_suggested_display_precision = None
+    _attr_icon = "mdi:map-marker"
+
+    def __init__(self, coordinator: CarbuCoordinator, fuel: str) -> None:
+        super().__init__(coordinator, fuel, "station")
+        self._attr_name = f"{FUELS[fuel][1]} station"
+
+    @property
+    def native_value(self) -> str | None:
+        if not self._stations:
+            return None
+        best = self._stations[0]
+        value = best.name
+        if best.full_address:
+            value = f"{value} – {best.full_address}"
+        if best.distance is not None:
+            value = f"{value} ({best.distance:g} km)"
+        return value[:255]
+
+    @property
+    def entity_picture(self) -> str | None:
+        return self._stations[0].logo if self._stations else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if not self._stations:
+            return {}
+        best = self._stations[0]
+        attrs = {
+            "price": best.price,
+            "station": best.name,
+            "brand": best.brand,
+            "full_address": best.full_address,
+            "distance_km": best.distance,
+            "latitude": best.latitude,
+            "longitude": best.longitude,
+            "maps_url": best.maps_url,
+            "url": best.url,
+        }
         return {k: v for k, v in attrs.items() if v is not None}
 
 

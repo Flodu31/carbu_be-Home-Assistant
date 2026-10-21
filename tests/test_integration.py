@@ -35,6 +35,10 @@ async def test_full_flow(hass, aioclient_mock):
 
     states = {s.entity_id: s for s in hass.states.async_all("sensor")}
     print(list(states))
+    assert len(states) == 3
+    station = next(s for k, s in states.items() if k.endswith("_station"))
+    assert station.state == "Shell Saintes – Chaussée 1, 1480 Saintes (3.2 km)", station.state
+    assert station.attributes["latitude"] == 50.70 and station.attributes["price"] == 1.789
     cheap = next(s for k, s in states.items() if k.endswith("moins_cher"))
     avg = next(s for k, s in states.items() if k.endswith("moyenne"))
     assert cheap.state == "1.789" and cheap.attributes["station"] == "Shell Saintes"
@@ -49,3 +53,18 @@ async def test_bad_postal(hass, aioclient_mock):
     r = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     r = await hass.config_entries.flow.async_configure(r["flow_id"], {"postal_code": "abc"})
     assert r["errors"] == {"postal_code": "invalid_postal_code"}
+
+
+async def test_two_towns(hass, aioclient_mock):
+    loc2 = json.dumps([{"id":"BE_bw_50","n":"Nivelles","pn":"Brabant Wallon","c":"BE","pc":"1400"}])
+    aioclient_mock.get(re.compile(r".*location=1480.*"), text=LOC)
+    aioclient_mock.get(re.compile(r".*location=1400.*"), text=loc2)
+    aioclient_mock.get(re.compile(r".*liste-stations-service.*"), text=HTML)
+    for pc, tid in (("1480", "BE_bw_193"), ("1400", "BE_bw_50")):
+        r = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+        r = await hass.config_entries.flow.async_configure(r["flow_id"], {"postal_code": pc})
+        r = await hass.config_entries.flow.async_configure(r["flow_id"], {"town_id": tid, "fuels": ["super95"]})
+        assert r["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+    ids = [s.entity_id for s in hass.states.async_all("sensor")]
+    assert len(ids) == 6 and any("nivelles" in i for i in ids) and any("tubize" in i for i in ids), ids
