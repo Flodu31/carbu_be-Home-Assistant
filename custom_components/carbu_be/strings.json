@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carbu BE",
+        "description": "Belgian postal code to search gas stations around.",
+        "data": {
+          "postal_code": "Postal code"
+        }
+      },
+      "town": {
+        "title": "Town and fuels",
+        "description": "Towns found for {postal_code}.",
+        "data": {
+          "town_id": "Town",
+          "fuels": "Fuels"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach carbu.com.",
+      "invalid_postal_code": "Expected a 4-digit Belgian postal code.",
+      "no_town": "No Belgian town found for this postal code.",
+      "no_fuel": "Select at least one fuel."
+    },
+    "abort": {
+      "already_configured": "This town is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Carbu BE options",
+        "data": {
+          "fuels": "Fuels",
+          "scan_interval": "Update interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "no_fuel": "Select at least one fuel."
+    }
+  }
+}

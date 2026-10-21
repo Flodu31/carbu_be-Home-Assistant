@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carbu BE",
+        "description": "Code postal belge autour duquel chercher les stations.",
+        "data": {
+          "postal_code": "Code postal"
+        }
+      },
+      "town": {
+        "title": "Commune et carburants",
+        "description": "Communes trouvées pour {postal_code}.",
+        "data": {
+          "town_id": "Commune",
+          "fuels": "Carburants"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de joindre carbu.com.",
+      "invalid_postal_code": "Code postal belge à 4 chiffres attendu.",
+      "no_town": "Aucune commune belge trouvée pour ce code postal.",
+      "no_fuel": "Choisis au moins un carburant."
+    },
+    "abort": {
+      "already_configured": "Cette commune est déjà configurée."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Carbu BE",
+        "data": {
+          "fuels": "Carburants",
+          "scan_interval": "Intervalle de mise à jour (minutes)"
+        }
+      }
+    },
+    "error": {
+      "no_fuel": "Choisis au moins un carburant."
+    }
+  }
+}
