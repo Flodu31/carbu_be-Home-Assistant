@@ -27,7 +27,9 @@ from homeassistant.helpers.selector import (
 from .api import CarbuClient, CarbuError, Town
 from .const import (
     CONF_FUELS,
+    CONF_MAX_DISTANCE,
     CONF_POSTAL_CODE,
+    DEFAULT_MAX_DISTANCE_KM,
     CONF_SCAN_INTERVAL,
     CONF_TOWN_ID,
     CONF_TOWN_NAME,
@@ -150,6 +152,7 @@ class CarbuOptionsFlow(OptionsFlow):
                 errors[CONF_FUELS] = "no_fuel"
             else:
                 user_input[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
+                user_input[CONF_MAX_DISTANCE] = float(user_input[CONF_MAX_DISTANCE])
                 return self.async_create_entry(data=user_input)
 
         entry = self.config_entry
@@ -173,6 +176,20 @@ class CarbuOptionsFlow(OptionsFlow):
                             step=5,
                             unit_of_measurement="min",
                             mode=NumberSelectorMode.BOX,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_MAX_DISTANCE,
+                        default=entry.options.get(
+                            CONF_MAX_DISTANCE, DEFAULT_MAX_DISTANCE_KM
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=50,
+                            step=1,
+                            unit_of_measurement="km",
+                            mode=NumberSelectorMode.SLIDER,
                         )
                     ),
                 }

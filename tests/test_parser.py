@@ -34,5 +34,20 @@ def test_data_attrs():
     assert [x.name for x in s] == ["Q8", "Total Tubize"]
     assert s[1].latitude == 50.69 and s[1].url == "https://carbu.com/x/1"
 
+
+REAL = """<div id="item_2335" data-lat="50.694483178885" data-lng="4.2046174401978" data-id="2335" data-logo="esso.gif" data-name="Esso Tubize" data-fuelname="Diesel (B7)" data-price="2.444" data-distance="1.1916450040391" data-link="https://carbu.com/belgique/index.php/station/esso/tubize/1480/2335" data-address="Rue De Nivelles 4&lt;br/&gt;1480 Tubize" class="stationItem panel panel-default"><img src="https://carbucomstatic-5141.kxcdn.com//brandLogo/esso.gif"><span>2,444 €/L</span><span>21/10/26</span></div>
+<div id="item_1578" data-lat="50.68871508666" data-lng="4.2009632516595" data-id="1578" data-logo="q8.gif" data-name="Q8 Tubize" data-fuelname="Diesel (B7)" data-price="2.399" data-distance="" data-link="https://carbu.com/belgique/index.php/station/q8/tubize/1480/1578" data-address="Rue de Mons 126&lt;br/&gt;1480 Tubize" class="stationItem panel panel-default"></div>"""
+
+def test_real_page():
+    s = parser.parse_stations(REAL)
+    q8, esso = s
+    assert esso.latitude == 50.694483178885 and esso.longitude == 4.2046174401978
+    assert esso.address == "Rue De Nivelles 4" and esso.postal_code == "1480" and esso.city == "Tubize"
+    assert esso.full_address == "Rue De Nivelles 4, 1480 Tubize"
+    assert esso.distance == 1.19 and esso.updated == "21/10/26" and esso.brand == "Esso"
+    assert esso.maps_url.endswith("query=50.694483178885,4.2046174401978")
+    assert esso.logo.endswith("brandLogo/esso.gif")
+    assert q8.distance is None and q8.logo.endswith("/brandLogo/q8.gif")
+
 if __name__ == "__main__":
-    test_structure(); test_data_attrs(); print("OK")
+    test_structure(); test_data_attrs(); test_real_page(); print("OK")

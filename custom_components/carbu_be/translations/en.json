@@ -33,7 +33,8 @@
         "title": "Carbu BE options",
         "data": {
           "fuels": "Fuels",
-          "scan_interval": "Update interval (minutes)"
+          "scan_interval": "Update interval (minutes)",
+          "max_distance": "Max distance (km)"
         }
       }
     },

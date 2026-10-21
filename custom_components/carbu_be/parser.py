@@ -32,8 +32,25 @@ class Station:
     longitude: float | None = None
     distance: float | None = None
 
+    @property
+    def full_address(self) -> str | None:
+        tail = " ".join(x for x in (self.postal_code, self.city) if x)
+        return ", ".join(x for x in (self.address, tail) if x) or None
+
+    @property
+    def maps_url(self) -> str | None:
+        if self.latitude is None or self.longitude is None:
+            return None
+        return (
+            "https://www.google.com/maps/search/?api=1"
+            f"&query={self.latitude},{self.longitude}"
+        )
+
     def as_dict(self) -> dict:
-        return {k: v for k, v in asdict(self).items() if v is not None}
+        d = {k: v for k, v in asdict(self).items() if v is not None}
+        if self.maps_url:
+            d["maps_url"] = self.maps_url
+        return d
 
 
 def _to_float(value: str | None) -> float | None:
@@ -47,31 +64,66 @@ def _to_float(value: str | None) -> float | None:
         return None
 
 
+def _split_address(raw: str | None) -> tuple[str | None, str | None, str | None]:
+    """'Rue De Nivelles 4<br/>1480 Tubize' -> (street, postal code, city)."""
+    if not raw:
+        return None, None, None
+    parts = [
+        p.strip()
+        for p in re.split(r"<br\s*/?>|\n", BeautifulSoup(raw, "html.parser").decode())
+        if p.strip()
+    ]
+    parts = [BeautifulSoup(p, "html.parser").get_text(" ", strip=True) for p in parts]
+    street = parts[0] if parts else None
+    pc = city = None
+    if len(parts) > 1:
+        m = re.match(r"(\d{4})\s+(.*)", parts[-1])
+        if m:
+            pc, city = m.group(1), m.group(2)
+        else:
+            city = parts[-1]
+    return street, pc, city
+
+
 def _parse_data_attributes(soup: BeautifulSoup) -> list[Station]:
-    """Strategy A: elements carrying data-price (+ data-name, data-lat ...)."""
+    """Strategy A: div.stationItem carrying data-price, data-lat, data-lng ..."""
     stations: dict[str, Station] = {}
     for el in soup.select("[data-price]"):
         price = _to_float(el.get("data-price"))
         if not price:
             continue
-        sid = el.get("data-id") or el.get("data-name") or str(len(stations))
+        sid = str(el.get("data-id") or el.get("data-name") or len(stations))
+        if sid in stations:
+            continue
         link = el.get("data-link")
-        stations.setdefault(
-            sid,
-            Station(
-                id=str(sid),
-                name=(el.get("data-name") or "").strip() or "Station",
-                price=price,
-                brand=el.get("data-brand") or el.get("data-logo"),
-                address=el.get("data-address"),
-                postal_code=el.get("data-postalcode"),
-                city=el.get("data-city"),
-                url=urljoin(BASE, link) if link else None,
-                logo=urljoin(BASE, el["data-logo"]) if el.get("data-logo") else None,
-                latitude=_to_float(el.get("data-lat")),
-                longitude=_to_float(el.get("data-lng")),
-                distance=_to_float(el.get("data-distance")),
-            ),
+        logo_file = el.get("data-logo")
+        logo_img = el.find("img", src=re.compile(r"brandLogo", re.I))
+        if logo_img:
+            logo = urljoin(BASE, logo_img["src"])
+        elif logo_file:
+            logo = f"https://carbucomstatic-5141.kxcdn.com/brandLogo/{logo_file}"
+        else:
+            logo = None
+        brand = el.get("data-brand")
+        if not brand and logo_file:
+            brand = re.sub(r"\.\w+$", "", logo_file).replace("_", " ").replace("-", " ").title()
+        street, pc, city = _split_address(el.get("data-address"))
+        date_m = DATE_RE.search(el.get_text(" ", strip=True))
+        dist = _to_float(el.get("data-distance"))
+        stations[sid] = Station(
+            id=sid,
+            name=(el.get("data-name") or "").strip() or "Station",
+            price=price,
+            brand=brand,
+            address=street,
+            postal_code=pc or el.get("data-postalcode"),
+            city=city or el.get("data-city"),
+            url=urljoin(BASE, link) if link else None,
+            logo=logo,
+            updated=date_m.group(1) if date_m else None,
+            latitude=_to_float(el.get("data-lat")),
+            longitude=_to_float(el.get("data-lng")),
+            distance=round(dist, 2) if dist is not None else None,
         )
     return list(stations.values())
 

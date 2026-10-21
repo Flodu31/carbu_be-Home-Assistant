@@ -33,7 +33,8 @@
         "title": "Options Carbu BE",
         "data": {
           "fuels": "Carburants",
-          "scan_interval": "Intervalle de mise à jour (minutes)"
+          "scan_interval": "Intervalle de mise à jour (minutes)",
+          "max_distance": "Distance maximale (km)"
         }
       }
     },

@@ -13,7 +13,9 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import CarbuClient, CarbuError
 from .const import (
     CONF_FUELS,
+    CONF_MAX_DISTANCE,
     CONF_POSTAL_CODE,
+    DEFAULT_MAX_DISTANCE_KM,
     CONF_SCAN_INTERVAL,
     CONF_TOWN_ID,
     CONF_TOWN_NAME,
@@ -47,14 +49,21 @@ class CarbuCoordinator(DataUpdateCoordinator[dict[str, list[Station]]]):
     async def _async_update_data(self) -> dict[str, list[Station]]:
         data: dict[str, list[Station]] = {}
         errors: list[str] = []
+        max_km = self.entry.options.get(CONF_MAX_DISTANCE, DEFAULT_MAX_DISTANCE_KM)
         for fuel in self.fuels:
             try:
-                data[fuel] = await self.client.async_get_stations(
+                stations = await self.client.async_get_stations(
                     fuel,
                     self.entry.data[CONF_TOWN_NAME],
                     self.entry.data[CONF_POSTAL_CODE],
                     self.entry.data[CONF_TOWN_ID],
                 )
+                if any(s.distance is not None for s in stations):
+                    stations = [
+                        s for s in stations
+                        if s.distance is not None and s.distance <= max_km
+                    ]
+                data[fuel] = stations
             except CarbuError as err:
                 errors.append(f"{fuel}: {err}")
                 # keep previous values for this fuel if we had some
